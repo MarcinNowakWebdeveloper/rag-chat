@@ -1,0 +1,14 @@
+langchain==0.2.14
+langchain-community==0.2.14
+langchain-chroma
+langchain-ollama
+chromadb
+streamlit
+ollama
+python-dotenv
+pydantic
+beautifulsoup4
+types-beautifulsoup4
+trafilatura
+lxml_html_clean
+types-requests
