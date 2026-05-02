@@ -10,6 +10,7 @@ load_dotenv()
 class RAGConfig:
     k: int
     similarity_threshold: float
+    batch_size: int
 
 
 @dataclass
@@ -24,6 +25,7 @@ class WebCrawlerConfig:
     max_pages: int
     domain: str
     source: list[str]
+    workers_count: int
 
 
 @dataclass
@@ -55,12 +57,13 @@ class Config:
 def load_config() -> Config:
     return Config(
         OLLAMA_MODEL=os.getenv("OLLAMA_MODEL", "llama3:8b"),
-        EMBEDDING_MODEL=os.getenv("EMBEDDING_MODEL", "llama3"),
+        EMBEDDING_MODEL=os.getenv("EMBEDDING_MODEL", "nomic-embed-text"),
         VECTOR_DB=os.getenv("VECTOR_DB", "chroma"),
-        VECTOR_DB_PATH=os.getenv("VECTOR_DB_PATH", "../../chroma_db"),
+        VECTOR_DB_PATH=os.getenv("VECTOR_DB_PATH", "./chroma_db"),
         RAG=RAGConfig(
             k=int(os.getenv("RAG_K", 3)),
             similarity_threshold=float(os.getenv("RAG_SIMILARITY_THRESHOLD", 0.4)),
+            batch_size=int(os.getenv("RAG_BATCH_SIZE", 150)),
         ),
         CHUNKS=ChunksConfig(
             size=int(os.getenv("CHUNK_SIZE", 800)),
@@ -73,6 +76,7 @@ def load_config() -> Config:
             max_pages=int(os.getenv("WEB_CRAWLER_MAX_PAGES", 60)),
             domain=os.getenv("WEB_CRAWLER_DOMAIN", ""),
             source=json.loads(os.getenv("WEB_CRAWLER_SOURCE", "[]")),
+            workers_count=int(os.getenv("WEB_CRAWLER_WORKERS_COUNT", 10)),
         ),
     )
 

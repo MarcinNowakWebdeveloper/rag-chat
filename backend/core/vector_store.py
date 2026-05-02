@@ -16,12 +16,12 @@ def get_embeddings():
 # =========================
 
 
-def get_vector_db():
+def get_vector_db(with_embeddings: bool = True):
     """
     Factory for vector store abstraction.
     """
 
-    embeddings = get_embeddings()
+    embeddings = get_embeddings() if with_embeddings else None
 
     if config.VECTOR_DB == "chroma":
         return Chroma(

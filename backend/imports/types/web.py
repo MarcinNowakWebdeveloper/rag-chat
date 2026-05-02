@@ -1,26 +1,101 @@
-from backend.core.vector_store import get_vector_db
+from backend.core.vector_store import get_vector_db, get_embeddings
+from backend.core.config import config
 from backend.imports.splitter import split_documents
 from backend.imports.types.web_service.crawler import WebCrawler
+from asyncio import Queue
+from langchain_core.documents import Document
 
-db = get_vector_db()
+import asyncio
+import time
+
+db = get_vector_db(with_embeddings=False)
 
 
-def import_web_list(seed_urls: list[str]):
+async def import_web_list(seed_urls: list[str]):
     print("🌐 Starting web imports...")
 
-    crawler = WebCrawler()
+    pages_queue: Queue[tuple[str, int]] = asyncio.Queue()
+    chunks_queue: Queue[Document | None] = asyncio.Queue()
 
-    docs = crawler.crawl(seed_urls)
+    monitor_task = asyncio.create_task(monitor(pages_queue, chunks_queue))
 
-    print(f"📄 Pages fetched: {len(docs)}")
+    crawler = WebCrawler(pages_queue)
+    crawler_task = asyncio.create_task(crawler.crawl(seed_urls))
 
-    chunks = split_documents(docs)
+    chunk_task = asyncio.create_task(chunk_worker(pages_queue, chunks_queue))
 
-    print(f"✂️ Chunks created: {len(chunks)}")
+    db_workers = [asyncio.create_task(db_worker(chunks_queue)) for _ in range(1)]
 
-    if not chunks:
-        return
+    await crawler_task
+    await pages_queue.join()
 
-    db.add_documents(chunks)
+    for _ in range(1):
+        await chunks_queue.put(None)
 
-    print("✅ Web RAG complete")
+    await chunks_queue.join()
+
+    chunk_task.cancel()
+    monitor_task.cancel()
+
+    print(f"\r✅ Web RAG complete")
+
+
+async def chunk_worker(pages_queue, chunks_queue):
+    while True:
+        doc = await pages_queue.get()
+
+        chunks = split_documents([doc])
+
+        for c in chunks:
+            await chunks_queue.put(c)
+
+        pages_queue.task_done()
+
+
+async def db_worker(chunks_queue):
+    batch = []
+
+    while True:
+        chunk = await chunks_queue.get()
+
+        try:
+            if chunk is None:
+                break
+
+            batch.append(chunk)
+
+            if len(batch) >= config.RAG.batch_size:
+                await add_embeddings(batch)
+                batch = []
+
+        finally:
+            chunks_queue.task_done()
+
+    if batch:
+        await add_embeddings(batch)
+
+
+async def add_embeddings(batch):
+    texts = [c.page_content for c in batch]
+    metadatas = [c.metadata for c in batch]
+    ids = [c.metadata["source"] + str(i) for i, c in enumerate(batch)]
+
+    embeddings = await asyncio.to_thread(get_embeddings().embed_documents, texts)
+
+    await asyncio.to_thread(
+        db._collection.add,
+        embeddings=embeddings,
+        documents=texts,
+        metadatas=metadatas,
+        ids=ids,
+    )
+
+
+async def monitor(pages_queue, chunks_queue):
+    while True:
+        print(
+            f"\r📊 pages_queue={pages_queue.qsize()} chunks_queue={chunks_queue.qsize()}    ",
+            end="",
+            flush=True,
+        )
+        await asyncio.sleep(2)

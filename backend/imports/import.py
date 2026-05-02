@@ -5,6 +5,8 @@ from backend.core.vector_store import delete_collection
 
 import os
 import argparse
+import asyncio
+import time
 
 os.environ["USER_AGENT"] = (
     "Mozilla/5.0 (compatible; MyRAGBot/1.0; +https://example.com/bot)"
@@ -20,7 +22,18 @@ def reset_db():
         print(f"🧹 DB is reset")
 
 
-if __name__ == "__main__":
+async def main():
+    start = time.perf_counter()
     reset_db()
-    import_folder(config.DATA_PATH)
-    import_web_list(seed_urls=config.WEB_CRAWLER.source)
+
+    await asyncio.gather(
+        import_folder(config.DATA_PATH),
+        import_web_list(seed_urls=config.WEB_CRAWLER.source),
+    )
+
+    end = time.perf_counter()
+    print(f"⏱ Total time: {end - start:.2f}s")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
