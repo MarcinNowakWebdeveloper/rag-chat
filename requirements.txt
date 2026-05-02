@@ -12,3 +12,4 @@ types-beautifulsoup4
 trafilatura
 lxml_html_clean
 types-requests
+streamlit

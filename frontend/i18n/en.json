@@ -1,0 +1,12 @@
+{
+  "title": "RAG Chat Playground",
+  "language": "Language",
+  "question": "Ask a question",
+  "style": "Answer style",
+  "llm": "LLM (no RAG)",
+  "rag": "RAG Answer",
+  "thinking": "Thinking...",
+  "searching": "Searching knowledge base...",
+  "confidence": "Confidence",
+  "sources": "Sources"
+}
