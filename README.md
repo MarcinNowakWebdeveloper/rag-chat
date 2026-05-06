@@ -72,6 +72,8 @@ User → Router → RAG Validation → (Retrieve / Reject) → Personality Layer
 
 ```ollama pull llama3:8b``` - or any other model you want to use
 
+```ollama pull phi3:mini``` - or any other model you want to use for classification
+
 2. Build knowledge base (RAG ingestion)
 
 Load data from files and web sources:

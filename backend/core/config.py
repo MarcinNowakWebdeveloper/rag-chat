@@ -32,6 +32,7 @@ class WebCrawlerConfig:
 class Config:
     # LLM
     OLLAMA_MODEL: str
+    CLASSIFICATION_MODEL: str
 
     # Embeddings
     EMBEDDING_MODEL: str
@@ -57,6 +58,7 @@ class Config:
 def load_config() -> Config:
     return Config(
         OLLAMA_MODEL=os.getenv("OLLAMA_MODEL", "llama3:8b"),
+        CLASSIFICATION_MODEL=os.getenv("CLASSIFICATION_MODEL", "phi3:mini"),
         EMBEDDING_MODEL=os.getenv("EMBEDDING_MODEL", "nomic-embed-text"),
         VECTOR_DB=os.getenv("VECTOR_DB", "chroma"),
         VECTOR_DB_PATH=os.getenv("VECTOR_DB_PATH", "./chroma_db"),

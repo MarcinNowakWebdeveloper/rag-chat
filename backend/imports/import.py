@@ -1,6 +1,7 @@
 from backend.core.config import config
 from backend.imports.types.file import import_folder
 from backend.imports.types.web import import_web_list
+from backend.imports.bootstrap import bootstrap
 from backend.core.vector_store import delete_collection
 
 import os
@@ -24,6 +25,7 @@ def reset_db():
 
 async def main():
     start = time.perf_counter()
+    bootstrap()
     reset_db()
 
     await asyncio.gather(
