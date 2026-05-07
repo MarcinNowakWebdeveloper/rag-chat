@@ -40,6 +40,8 @@ class Config:
     # DB
     VECTOR_DB: str
     VECTOR_DB_PATH: str
+    SQL_DB_NAME: str
+    SQL_DB_URL: str
 
     # RAG
     RAG: RAGConfig
@@ -62,6 +64,8 @@ def load_config() -> Config:
         EMBEDDING_MODEL=os.getenv("EMBEDDING_MODEL", "nomic-embed-text"),
         VECTOR_DB=os.getenv("VECTOR_DB", "chroma"),
         VECTOR_DB_PATH=os.getenv("VECTOR_DB_PATH", "./chroma_db"),
+        SQL_DB_NAME=os.getenv("SQL_DB_NAME", "llm"),
+        SQL_DB_URL=os.getenv("SQL_DB_URL", "postgresql://postgres:password@localhost/"),
         RAG=RAGConfig(
             k=int(os.getenv("RAG_K", 3)),
             similarity_threshold=float(os.getenv("RAG_SIMILARITY_THRESHOLD", 0.4)),

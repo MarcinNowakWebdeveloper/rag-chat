@@ -64,6 +64,10 @@ User → Router → RAG Validation → (Retrieve / Reject) → Personality Layer
 
 ---
 
+## 📦 Modules
+
+💼 [CV](README/CV.md)
+
 ## ⚙️ Setup
 
 1. Install requirements

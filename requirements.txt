@@ -13,3 +13,6 @@ trafilatura
 lxml_html_clean
 types-requests
 streamlit
+sqlalchemy
+psycopg2-binary
+alembic
