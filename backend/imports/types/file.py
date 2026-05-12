@@ -1,15 +1,12 @@
 from backend.core.config import config
-from backend.core.vector_store import get_vector_db
+from backend.core.vector_store import VectorDbCollection
 from backend.imports.splitter import split_documents
+from backend.constants.vector_collection import VectorCollection
 from langchain_community.document_loaders import TextLoader
+from typing import Dict
 
 import os
 import asyncio
-
-# =========================
-# INIT
-# =========================
-db = get_vector_db()
 
 
 # =========================
@@ -28,17 +25,26 @@ async def import_file(path: str):
 
     docs = await asyncio.to_thread(load_file, path)
     chunks = await asyncio.to_thread(split_documents, docs)
-
+    collections: Dict[str, list] = {}
     for chunk in chunks:
         chunk.metadata["source"] = os.path.basename(path)
-
-    for i in range(0, len(chunks), config.RAG.batch_size):
-        batch = chunks[i : i + config.RAG.batch_size]
-
-        await asyncio.to_thread(
-            db.add_documents,
-            batch,
+        collection_name = chunk.metadata.get(
+            "collection", VectorCollection.DEFAULT.value
         )
+
+        collections.setdefault(collection_name, []).append(chunk)
+
+    VectorDbCollectionService = VectorDbCollection()
+    for collection_name, collection in collections.items():
+
+        db = VectorDbCollectionService.get_vector_db_by_collection(collection_name)
+        for i in range(0, len(collection), config.RAG.batch_size):
+            batch = collection[i : i + config.RAG.batch_size]
+
+            await asyncio.to_thread(
+                db.add_documents,
+                batch,
+            )
 
     return len(chunks)
 

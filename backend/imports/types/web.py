@@ -1,14 +1,16 @@
-from backend.core.vector_store import get_vector_db, get_embeddings
+from backend.core.vector_store import VectorDbCollection, get_embeddings
+from backend.constants.vector_collection import VectorCollection
 from backend.core.config import config
 from backend.imports.splitter import split_documents
 from backend.imports.types.web_service.crawler import WebCrawler
 from asyncio import Queue
 from langchain_core.documents import Document
+from typing import Dict
 
 import asyncio
 import time
 
-db = get_vector_db(with_embeddings=False)
+VectorDbCollectionService = VectorDbCollection()
 
 
 async def import_web_list(seed_urls: list[str]):
@@ -76,19 +78,31 @@ async def db_worker(chunks_queue):
 
 
 async def add_embeddings(batch):
-    texts = [c.page_content for c in batch]
-    metadatas = [c.metadata for c in batch]
-    ids = [c.metadata["source"] + str(i) for i, c in enumerate(batch)]
+    collections: Dict[str, Dict[str, list]] = {}
+    for index, chunk in enumerate(batch):
+        collection_name = chunk.metadata.get(
+            "collection", VectorCollection.DEFAULT.value
+        )
+        collections[collection_name]["texts"].append(chunk.page_content)
+        collections[collection_name]["metadatas"].append(chunk.metadata)
+        collections[collection_name]["ids"].append(
+            chunk.metadata["source"] + str(index)
+        )
 
-    embeddings = await asyncio.to_thread(get_embeddings().embed_documents, texts)
-
-    await asyncio.to_thread(
-        db._collection.add,
-        embeddings=embeddings,
-        documents=texts,
-        metadatas=metadatas,
-        ids=ids,
-    )
+    for collection_name, collection in collections.items():
+        embeddings = await asyncio.to_thread(
+            get_embeddings().embed_documents, collection["texts"]
+        )
+        db = VectorDbCollectionService.get_vector_db_by_collection(
+            collection_name, with_embeddings=False
+        )
+        await asyncio.to_thread(
+            db._collection.add,
+            embeddings=embeddings,
+            documents=collection["texts"],
+            metadatas=collection["metadatas"],
+            ids=collection["ids"],
+        )
 
 
 async def monitor(pages_queue, chunks_queue):

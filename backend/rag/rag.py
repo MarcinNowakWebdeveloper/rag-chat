@@ -1,7 +1,11 @@
 from backend.core.config import config
-from backend.core.vector_store import get_vector_db
+from backend.core.vector_store import VectorDbCollection
+from backend.constants.vector_collection import VectorCollection
 
-db = get_vector_db()
+VectorDbCollectionService = VectorDbCollection()
+db = VectorDbCollectionService.get_vector_db_by_collection(
+    VectorCollection.DEFAULT.value
+)
 
 
 def retrieve(question: str):
